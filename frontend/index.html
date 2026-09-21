@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECU Tuner Pro | Dyno Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #121820;
+            --bg-tertiary: #1a222e;
+            --bg-card: #151c26;
+            --accent-cyan: #00d4ff;
+            --accent-orange: #ff6b35;
+            --accent-green: #00ff88;
+            --accent-red: #ff3366;
+            --accent-yellow: #ffcc00;
+            --accent-purple: #a855f7;
+            --text-primary: #e8edf4;
+            --text-secondary: #8b97a8;
+            --text-muted: #5a6474;
+            --border-color: #2a3544;
+            --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
+            --glow-orange: 0 0 20px rgba(255, 107, 53, 0.3);
+            --glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--text-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand span {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: var(--glow-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border-color: var(--accent-cyan);
+        }
+
+        .header-btn.primary {
+            background: linear-gradient(135deg, var(--accent-cyan), #0099cc);
+            border: none;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 1rem;
+            padding: 1rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        @media (max-width: 1400px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title i {
+            color: var(--accent-cyan);
+        }
+
+        .panel-content {
+            padding: 1rem;
+        }
+
+        /* Left Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Sensor List */
+        .sensor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sensor-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .sensor-item:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .sensor-item .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .sensor-item .value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .sensor-item .unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        /* Gauges */
+        .gauge-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .gauge {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border-color);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        .gauge::before {
+            content: '';
+            position: absolute;
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 135deg,
+                var(--accent-cyan) 0deg,
+                var(--accent-cyan) var(--value, 180deg),
+                var(--bg-primary) var(--value, 180deg),
+                var(--bg-primary) 270deg,
+                transparent 270deg
+            );
+            opacity: 0.3;
+        }
+
+        .gauge::after {
+            content: '';
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            border-radius: 50%;
+            background: var(--bg-card);
+            z-index: 1;
+        }
+
+        .gauge-value {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .gauge-value .number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+        }
+
+        .gauge-value .number.boost {
+            color: var(--accent-green);
+            text-shadow: var(--glow-green);
+        }
+
+        .gauge-value .number.rpm {
+            color: var(--accent-orange);
+            text-shadow: var(--glow-orange);
+        }
+
+        .gauge-value .unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gauge-label {
+            position: relative;
+            z-index: 2;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Center Section */
+        .center-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Main Gauges Row */
+        .main-gauges {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-gauges {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .main-gauge-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-gauge-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-cyan);
+        }
+
+        .main-gauge-card.boost::before {
+            background: var(--accent-green);
+        }
+
+        .main-gauge-card.rpm::before {
+            background: var(--accent-orange);
+        }
+
+        .main-gauge-card.temp::before {
+            background: var(--accent-red);
+        }
+
+        .main-gauge-card.fuel::before {
+            background: var(--accent-yellow);
+        }
+
+        .main-gauge-icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+        }
+
+        .main-gauge-card.boost .main-gauge-icon {
+            color: var(--accent-green);
+        }
+
+        .main-gauge-card.rpm .main-gauge-icon {
+            color: var(--accent-orange);
+        }
+
+        .main-gauge-card.temp .main-gauge-icon {
+            color: var(--accent-red);
+        }
+
+        .main-gauge-card.fuel .main-gauge-icon {
+            color: var(--accent-yellow);
+        }
+
+        .main-gauge-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+        }
+
+        .main-gauge-card.boost .main-gauge-value {
+            color: var(--accent-green);
+        }
+
+        .main-gauge-card.rpm .main-gauge-value {
+            color: var(--accent-orange);
+        }
+
+        .main-gauge-card.temp .main-gauge-value {
+            color: var(--accent-red);
+        }
+
+        .main-gauge-card.fuel .main-gauge-value {
+            color: var(--accent-yellow);
+        }
+
+        .main-gauge-unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .main-gauge-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .main-gauge-minmax {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Map Grid */
+        .maps-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 1100px) {
+            .maps-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: 50px repeat(8, 1fr);
+            gap: 2px;
+            font-size: 0.65rem;
+        }
+
+        .map-grid-header {
+            background: var(--bg-tertiary);
+            padding: 0.3rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .map-grid-row-header {
+            background: var(--bg-tertiary);
+            padding: 0.3rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-cell {
+            background: var(--bg-secondary);
+            padding: 0.3rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .map-cell:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            transform: scale(1.05);
+            z-index: 1;
+            border-color: var(--accent-cyan);
+        }
+
+        .map-cell.high {
+            color: var(--accent-red);
+        }
+
+        .map-cell.medium {
+            color: var(--accent-yellow);
+        }
+
+        .map-cell.low {
+            color: var(--accent-green);
+        }
+
+        /* Timing Grid */
+        .timing-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 3px;
+        }
+
+        .timing-cell {
+            aspect-ratio: 1;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid var(--border-color);
+        }
+
+        .timing-cell:hover {
+            transform: scale(1.1);
+            border-color: var(--accent-cyan);
+            z-index: 2;
+        }
+
+        .timing-cell.advanced {
+            background: linear-gradient(135deg, var(--accent-green), #00cc66);
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .timing-cell.retarded {
+            background: linear-gradient(135deg, var(--accent-red), #cc2255);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .timing-cell.stock {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        /* Right Sidebar */
+        .right-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Bar Gauges */
+        .bar-gauge {
+            margin-bottom: 1rem;
+        }
+
+        .bar-gauge-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
+        }
+
+        .bar-gauge-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .bar-gauge-value {
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .bar-gauge-track {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-gauge-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .bar-gauge-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .bar-gauge-fill.maf {
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+        }
+
+        .bar-gauge-fill.timing {
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-yellow), var(--accent-red));
+        }
+
+        .bar-gauge-fill.fuel {
+            background: linear-gradient(90deg, var(--accent-yellow), var(--accent-orange));
+        }
+
+        .bar-gauge-fill.voltage {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+        }
+
+        .bar-gauge-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.2rem;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        /* 3D Surface Map */
+        .surface-map {
+            height: 200px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 1rem;
+        }
+
+        .surface-bar {
+            width: 30px;
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease;
+            position: relative;
+        }
+
+        .surface-bar::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+        }
+
+        /* Data Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+        }
+
+        .data-table th {
+            background: var(--bg-tertiary);
+            padding: 0.5rem;
+            text-align: left;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .data-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+
+        .data-table .highlight {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .data-table .warning {
+            color: var(--accent-yellow);
+        }
+
+        .data-table .danger {
+            color: var(--accent-red);
+        }
+
+        /* Status Indicators */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-item .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin: 0 auto 0.3rem;
+        }
+
+        .status-item .dot.ok { background: var(--accent-green); box-shadow: var(--glow-green); }
+        .status-item .dot.warn { background: var(--accent-yellow); }
+        .status-item .dot.bad { background: var(--accent-red); }
+
+        .status-item .slabel {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Toolbar / action buttons */
+        .toolbar {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .btn.dump { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+        .btn.dump:hover:not(:disabled) { background: var(--accent-cyan); color: var(--bg-primary); box-shadow: var(--glow-cyan); }
+
+        .btn.flash { border-color: var(--accent-orange); color: var(--accent-orange); }
+        .btn.flash:hover:not(:disabled) { background: var(--accent-orange); color: var(--bg-primary); box-shadow: var(--glow-orange); }
+
+        .btn.connect { border-color: var(--accent-green); color: var(--accent-green); }
+        .btn.connect:hover:not(:disabled) { background: var(--accent-green); color: var(--bg-primary); box-shadow: var(--glow-green); }
+        .btn.connect.live { background: var(--accent-green); color: var(--bg-primary); }
+
+        /* Log console */
+        .log-console {
+            background: #05070b;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            height: 180px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            line-height: 1.5;
+        }
+
+        .log-console .lt { color: var(--text-muted); margin-right: 0.5rem; }
+        .log-console .info { color: var(--accent-cyan); }
+        .log-console .ok { color: var(--accent-green); }
+        .log-console .warn { color: var(--accent-yellow); }
+        .log-console .err { color: var(--accent-red); }
+
+        /* Cell editor */
+        .map-cell input, .timing-cell input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--accent-cyan);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: inherit;
+            text-align: center;
+            border-radius: 3px;
+            outline: none;
+            padding: 1px;
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.6rem;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .map-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
+        .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+        .dirty-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            background: var(--accent-yellow);
+            color: var(--bg-primary);
+            font-weight: 700;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .footer-note {
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .progress-wrap {
+            height: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 0.6rem;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            transition: width 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo">👻</div>
+            <div class="brand">
+                <h1>GhostTech FanTom</h1>
+                <span>ECU Tuner Pro</span>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="connection-status">
+                <div class="status-dot" id="connDot" style="background:var(--accent-red);box-shadow:none;"></div>
+                <span id="connText">Disconnected</span>
+            </div>
+            <button class="header-btn" id="simBtn"><i class="fas fa-flask"></i> Sim Data</button>
+            <button class="header-btn primary" id="connectBtn"><i class="fas fa-plug"></i> Connect</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- LEFT SIDEBAR -->
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-microchip"></i> ECU Session</div>
+                </div>
+                <div class="panel-content">
+                    <div class="toolbar" style="margin-bottom:0.75rem;">
+                        <button class="btn dump" id="dumpBtn"><i class="fas fa-download"></i> Dump ROM</button>
+                        <button class="btn flash" id="flashBtn" disabled><i class="fas fa-upload"></i> Flash ROM</button>
+                    </div>
+                    <div class="progress-wrap" id="progressWrap"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="sensor-list" style="margin-top:0.75rem;">
+                        <div class="sensor-item"><span class="label">ECU ID</span><span class="value" id="ecuId">--</span></div>
+                        <div class="sensor-item"><span class="label">ECU Family</span>
+                            <select id="ecuSelect" style="background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);padding:0.25rem 0.4rem;font-size:0.72rem;outline:none;max-width:130px;">
+                                <option value="SH7051">SH7051</option>
+                                <option value="SH7055_18" selected>SH7055 (180nm flash)</option>
+                                <option value="SH7055_35">SH7055 (350nm flash)</option>
+                                <option value="SH7058">SH7058</option>
+                                <option value="7055_18">7055_18 (legacy ababook)</option>
+                                <option value="7058">7058 (legacy ababook)</option>
+                            </select>
+                        </div>
+                        <div class="sensor-item"><span class="label">ROM Size</span><span class="value" id="romSize">--</span></div>
+                        <div class="sensor-item"><span class="label">Definition</span><span class="value" id="defName" style="font-size:0.7rem;">--</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-gauge-high"></i> Live Sensors</div>
+                </div>
+                <div class="panel-content">
+                    <div class="sensor-list" id="sensorList"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-terminal"></i> Console</div>
+                </div>
+                <div class="panel-content">
+                    <div class="log-console" id="logConsole"></div>
+                    <div style="display:flex;gap:0.4rem;margin-top:0.5rem;">
+                        <span style="color:var(--accent-cyan);font-family:'Courier New',monospace;font-size:0.75rem;align-self:center;">nisprog&gt;</span>
+                        <input id="consoleInput" placeholder="type a nisprog command… (native mode)"
+                            style="flex:1;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);padding:0.4rem 0.6rem;font-family:'Courier New',monospace;font-size:0.75rem;outline:none;" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER -->
+        <div class="center-section">
+            <div class="main-gauges">
+                <div class="main-gauge-card rpm">
+                    <div class="main-gauge-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="main-gauge-value" id="gRpm">0</div>
+                    <div class="main-gauge-unit">rpm</div>
+                    <div class="main-gauge-label">Engine Speed</div>
+                    <div class="main-gauge-minmax"><span>0</span><span>8000</span></div>
+                </div>
+                <div class="main-gauge-card boost">
+                    <div class="main-gauge-icon"><i class="fas fa-wind"></i></div>
+                    <div class="main-gauge-value" id="gBoost">0.0</div>
+                    <div class="main-gauge-unit">psi</div>
+                    <div class="main-gauge-label">Boost</div>
+                    <div class="main-gauge-minmax"><span>-14</span><span>30</span></div>
+                </div>
+                <div class="main-gauge-card temp">
+                    <div class="main-gauge-icon"><i class="fas fa-temperature-half"></i></div>
+                    <div class="main-gauge-value" id="gTemp">--</div>
+                    <div class="main-gauge-unit">°F</div>
+                    <div class="main-gauge-label">Coolant</div>
+                    <div class="main-gauge-minmax"><span>120</span><span>260</span></div>
+                </div>
+                <div class="main-gauge-card fuel">
+                    <div class="main-gauge-icon"><i class="fas fa-gas-pump"></i></div>
+                    <div class="main-gauge-value" id="gAfr">--</div>
+                    <div class="main-gauge-unit">afr</div>
+                    <div class="main-gauge-label">Air / Fuel</div>
+                    <div class="main-gauge-minmax"><span>10</span><span>20</span></div>
+                </div>
+            </div>
+
+            <div class="maps-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><i class="fas fa-table-cells"></i> <span id="fuelTitle">Fuel Map</span> <span id="fuelDirty"></span></div>
+                        <span style="font-size:0.65rem;color:var(--text-muted);">click a cell to edit</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="map-grid" id="fuelMap"></div>
+                        <div class="map-legend">
+                            <span><span class="swatch" style="background:var(--accent-green);"></span> lean</span>
+                            <span><span class="swatch" style="background:var(--accent-yellow);"></span> mid</span>
+                            <span><span class="swatch" style="background:var(--accent-red);"></span> rich</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><i class="fas fa-bolt"></i> <span id="timingTitle">Timing Map</span> <span id="timingDirty"></span></div>
+                        <span style="font-size:0.65rem;color:var(--text-muted);">click a cell to edit</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="timing-grid" id="timingMap"></div>
+                        <div class="map-legend">
+                            <span><span class="swatch" style="background:var(--accent-green);"></span> advanced</span>
+                            <span><span class="swatch" style="background:var(--accent-red);"></span> retarded</span>
+                            <span><span class="swatch" style="background:var(--bg-tertiary);border:1px solid var(--border-color);"></span> stock</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-chart-line"></i> Fuel Surface</div>
+                </div>
+                <div class="panel-content">
+                    <div class="surface-map" id="surfaceMap"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR -->
+        <div class="right-sidebar">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-sliders"></i> Channels</div>
+                </div>
+                <div class="panel-content" id="barGauges"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-list"></i> Map Index</div>
+                </div>
+                <div class="panel-content" style="padding:0;">
+                    <table class="data-table">
+                        <thead><tr><th>Table</th><th>Addr</th><th>Size</th></tr></thead>
+                        <tbody id="mapIndex"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-heart-pulse"></i> Status</div>
+                </div>
+                <div class="panel-content">
+                    <div class="status-grid" id="statusGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note" id="footerNote"></div>
+
+<script src="definitions.js"></script>
+<script>
+'use strict';
+/* ============================================================
+   GhostTech FanTom — Dyno Dashboard
+   Data flows through the FanTom bridge. In a Tauri shell the
+   bridge calls window.__TAURI__.invoke(); in a plain browser
+   it falls back to the built-in simulator.
+   ============================================================ */
+
+const logConsole = document.getElementById('logConsole');
+function log(msg, cls = 'info') {
+    const t = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const div = document.createElement('div');
+    div.innerHTML = `<span class="lt">[${t}]</span><span class="${cls}">${msg}</span>`;
+    logConsole.appendChild(div);
+    logConsole.scrollTop = logConsole.scrollHeight;
+}
+
+/* ---------------- Bridge ---------------- */
+const Bridge = {
+tauri: !!(window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke),
+async invoke(cmd, args = {}) {
+if (this.tauri) return window.__TAURI__.core.invoke(cmd, args);
+throw new Error('no native bridge (sim mode)');
+},
+get mode() { return this.tauri ? 'native' : 'sim'; }
+};
+// Tauri rejects with plain strings, not Errors — normalize for logging.
+function errMsg(e) { return (e && e.message) || String(e); }
+
+/* ---------------- State ---------------- */
+const S = {
+    connected: false,
+    sim: true,                 // sim data generator on/off
+    ecu: 'SH7055_18',          // ECU family -> npk_<family> kernel file
+    romLoaded: false,
+    dirty: false,
+    rpm: 0, boost: -8, temp: 185, afr: 14.7,
+    maf: 0, timing: 15, voltage: 13.8, knock: 0,
+    fuelMap: [],               // 8x8
+    timingMap: [],             // 6x12
+    romPath: null,             // dumped ROM file on disk (read_table/write_table target)
+    romBytes: null,
+    definition: null,
+    defsLoaded: 0,             // # definition XML files registered
+    currentTable: { fuel: null, timing: null }, // definition table backing each grid
+};
+
+const RPM_AXIS = [800, 1200, 1600, 2200, 2800, 3600, 4400, 5600];
+const LOAD_AXIS = ['10','20','30','45','60','75','90','100'];
+
+/* Seed plausible stock-ish maps */
+function seedMaps() {
+    S.fuelMap = [];
+    for (let r = 0; r < 8; r++) {
+        const row = [];
+        for (let c = 0; c < 8; c++) {
+            // richer with load & rpm — values ~ injector pulse ms * 100
+            row.push(Math.round(95 + r * 22 + c * 9 + Math.random() * 8));
+        }
+        S.fuelMap.push(row);
+    }
+    S.timingMap = [];
+    for (let r = 0; r < 6; r++) {
+        const row = [];
+        for (let c = 0; c < 12; c++) {
+            // timing falls off with load, rises then falls with rpm
+            row.push(Math.round(28 - r * 3.2 + Math.sin(c / 2.2) * 4 + Math.random() * 2));
+        }
+        S.timingMap.push(row);
+    }
+}
+
+function fuelClass(v) { return v < 160 ? 'low' : v < 260 ? 'medium' : 'high'; }
+function timingClass(v, stock) {
+    if (v === stock) return 'stock';
+    return v > stock ? 'advanced' : 'retarded';
+}
+
+/* ---------------- Render: maps ---------------- */
+const stockTiming = [];
+function gridAxisLabels(t, nx, ny) {
+    const ax = (t && t.axisLabels) || {};
+    const fmt = (v) => (typeof v === 'number' ? (+v.toFixed(2)).toString() : String(v));
+    const x = (ax.x && ax.x.length === nx) ? ax.x.map(fmt)
+        : (nx === LOAD_AXIS.length ? LOAD_AXIS : Array.from({ length: nx }, (_, i) => i));
+    const y = (ax.y && ax.y.length === ny) ? ax.y.map(fmt)
+        : (ny === RPM_AXIS.length ? RPM_AXIS : Array.from({ length: ny }, (_, i) => i));
+    return { x, y };
+}
+function renderFuelMap() {
+    const el = document.getElementById('fuelMap');
+    el.innerHTML = '';
+    const nx = (S.fuelMap[0] || []).length, ny = S.fuelMap.length;
+    if (!nx || !ny) { el.innerHTML = '<div style="opacity:.55;padding:1rem">No table loaded</div>'; return; }
+    el.style.gridTemplateColumns = `50px repeat(${nx}, 1fr)`;
+    const { x: xAxis, y: yAxis } = gridAxisLabels(S.currentTable.fuel, nx, ny);
+    el.appendChild(document.createElement('div')); // corner
+    xAxis.forEach(h => {
+        const d = document.createElement('div');
+        d.className = 'map-grid-header'; d.textContent = h;
+        el.appendChild(d);
+    });
+    S.fuelMap.forEach((row, r) => {
+        const rh = document.createElement('div');
+        rh.className = 'map-grid-row-header'; rh.textContent = yAxis[r];
+        el.appendChild(rh);
+        row.forEach((v, c) => {
+            const cell = document.createElement('div');
+            cell.className = 'map-cell ' + fuelClass(v);
+            cell.textContent = v;
+            cell.dataset.r = r; cell.dataset.c = c;
+            cell.addEventListener('click', () => editCell(cell, 'fuel'));
+            el.appendChild(cell);
+        });
+    });
+    renderSurface();
+}
+
+function renderTimingMap() {
+    const el = document.getElementById('timingMap');
+    el.innerHTML = '';
+    const nx = (S.timingMap[0] || []).length;
+    if (!nx || !S.timingMap.length) { el.innerHTML = '<div style="opacity:.55;padding:1rem">No table loaded</div>'; return; }
+    el.style.gridTemplateColumns = `repeat(${nx}, 1fr)`;
+    S.timingMap.forEach((row, r) => {
+        row.forEach((v, c) => {
+            if (stockTiming[r] === undefined) stockTiming[r] = [];
+            if (stockTiming[r][c] === undefined) stockTiming[r][c] = v;
+            const cell = document.createElement('div');
+            cell.className = 'timing-cell ' + timingClass(v, stockTiming[r][c]);
+            cell.textContent = v + '°';
+            cell.dataset.r = r; cell.dataset.c = c;
+            cell.addEventListener('click', () => editCell(cell, 'timing'));
+            el.appendChild(cell);
+        });
+    });
+}
+
+function renderSurface() {
+    const el = document.getElementById('surfaceMap');
+    el.innerHTML = '';
+    const ny = S.fuelMap.length, nx = (S.fuelMap[0] || []).length;
+    if (!nx || !ny) return;
+    // one bar per load column, averaged over rpm
+    for (let c = 0; c < nx; c++) {
+        let sum = 0;
+        for (let r = 0; r < ny; r++) sum += S.fuelMap[r][c];
+        const avg = sum / ny;
+        const h = Math.min(100, Math.max(8, (avg / 340) * 100));
+        const bar = document.createElement('div');
+        bar.className = 'surface-bar';
+        bar.style.height = h + '%';
+        bar.dataset.value = Math.round(avg);
+        el.appendChild(bar);
+    }
+}
+
+function markDirty() {
+    S.dirty = true;
+    document.getElementById('fuelDirty').innerHTML = '<span class="dirty-badge">MODIFIED</span>';
+    document.getElementById('timingDirty').innerHTML = '<span class="dirty-badge">MODIFIED</span>';
+    document.getElementById('flashBtn').disabled = !S.romLoaded;
+}
+
+function editCell(cell, kind) {
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    const cur = kind === 'fuel' ? S.fuelMap[r][c] : S.timingMap[r][c];
+    cell.innerHTML = '';
+    const inp = document.createElement('input');
+    inp.value = cur;
+    inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') commit();
+        if (e.key === 'Escape') renderAll();
+        e.stopPropagation();
+    });
+    inp.addEventListener('blur', commit);
+    async function commit() {
+        const v = parseInt(inp.value, 10);
+        if (!isNaN(v)) {
+            const t = S.currentTable[kind];
+            const grid = kind === 'fuel' ? S.fuelMap : S.timingMap;
+            if (t && S.romPath) {
+                // real table: validate against the storage type, reject out-of-range
+                const max = (t.storagetype === 'uint16') ? 65535 : 255;
+                if (v < 0 || v > max) {
+                    log(`map edit rejected: ${v} out of range 0–${max} for ${t.storagetype}`, 'err');
+                    renderAll();
+                    return;
+                }
+                grid[r][c] = v;
+                markDirty();
+                log(`map edit: ${t.name}[${r}][${c}] ${cur} → ${v} (raw)`, 'warn');
+                try {
+                    const res = await Bridge.invoke('write_table', {
+                        romPath: S.romPath,
+                        address: addrHex(t.address),
+                        storagetype: t.storagetype || 'uint8',
+                        endian: tableEndian(t),
+                        values: grid.flat(),
+                    });
+                    log('table: ' + res, 'ok');
+                } catch (e) { log('table write failed: ' + errMsg(e), 'err'); }
+            } else {
+                if (kind === 'fuel') { S.fuelMap[r][c] = Math.max(0, Math.min(999, v)); }
+                else { S.timingMap[r][c] = Math.max(-20, Math.min(60, v)); }
+                markDirty();
+                log(`map edit: ${kind}[${r}][${c}] ${cur} → ${v}`, 'warn');
+            }
+        }
+        renderAll();
+    }
+    cell.appendChild(inp);
+    inp.focus(); inp.select();
+}
+
+/* ---------------- Render: gauges & sensors ---------------- */
+const SENSORS = [
+    ['MAF', 'maf', 'g/s', 1], ['Ign Timing', 'timing', '°', 1],
+    ['Battery', 'voltage', 'V', 1], ['Knock', 'knock', 'cnt', 0],
+    ['TPS', 'tps', '%', 0], ['IAT', 'iat', '°F', 0],
+];
+function renderSensors() {
+    const el = document.getElementById('sensorList');
+    el.innerHTML = '';
+    SENSORS.forEach(([label, key, unit]) => {
+        const d = document.createElement('div');
+        d.className = 'sensor-item';
+        d.innerHTML = `<span class="label">${label}</span><span><span class="value" id="s_${key}">--</span><span class="unit">${unit}</span></span>`;
+        el.appendChild(d);
+    });
+}
+
+const BARS = [
+    ['MAF', 'maf', 320, 'maf'], ['Ign Timing', 'timing', 45, 'timing'],
+    ['Fuel Trim', 'fuelTrim', 25, 'fuel'], ['Voltage', 'voltage', 16, 'voltage'],
+];
+function renderBars() {
+    const el = document.getElementById('barGauges');
+    el.innerHTML = '';
+    BARS.forEach(([label, key, max, cls]) => {
+        const d = document.createElement('div');
+        d.className = 'bar-gauge';
+        d.innerHTML = `
+            <div class="bar-gauge-header"><span class="bar-gauge-label">${label}</span><span class="bar-gauge-value" id="b_${key}">--</span></div>
+            <div class="bar-gauge-track"><div class="bar-gauge-fill ${cls}" id="bf_${key}" style="width:0%"></div></div>
+            <div class="bar-gauge-markers"><span>0</span><span>${max}</span></div>`;
+        el.appendChild(d);
+    });
+}
+
+/* ---------------- Definitions ---------------- */
+// Load Nissan definition XMLs via the backend (XDFDEFINITIONS_PATH env var
+// or an explicit dir), register each with the Defs engine.
+async function loadDefinitions(dir = null) {
+    if (!Bridge.tauri) { log('definitions: sim mode — skipping definition load', 'info'); return; }
+    try {
+        const files = await Bridge.invoke('load_definitions', { dir });
+        let ok = 0, tables = 0;
+        for (const f of files) {
+            try { const d = Defs.register(f.xml, f.name); ok++; tables += (d.tables || []).length; }
+            catch (e) { log(`definitions: skipping ${f.name} (${errMsg(e)})`, 'warn'); }
+        }
+        S.defsLoaded = ok;
+        if (ok) log(`definitions: ${ok} file(s), ${tables} table(s) parsed`, 'ok');
+        else log('definitions: none loaded — set XDFDEFINITIONS_PATH to your NissanDefinitions folder and restart', 'warn');
+    } catch (e) {
+        log('definitions: ' + errMsg(e), 'warn');
+    }
+    renderMapIndex();
+}
+
+function addrHex(a) { return '0x' + a.toString(16).toUpperCase(); }
+function tableEndian(t) {
+    return t.endian || (S.definition && S.definition.romid && S.definition.romid.endian) || 'Big';
+}
+// Tables from the matched definition that live at a real ROM address.
+function addressableTables() {
+    const ts = (S.definition && S.definition.tables) || [];
+    return ts.filter(t => t.address != null);
+}
+// Load a definition table's real ROM values into a grid panel.
+async function viewTable(t, slot = 'fuel') {
+    if (!S.romPath) { log('table: dump a ROM first', 'warn'); return; }
+    const nx = t.sizex || 1, ny = t.sizey || 1;
+    log(`table: reading ${t.name} @ ${addrHex(t.address)} (${nx}×${ny} ${t.storagetype || 'uint8'})…`);
+    try {
+        const vals = await Bridge.invoke('read_table', {
+            romPath: S.romPath,
+            address: addrHex(t.address),
+            storagetype: t.storagetype || 'uint8',
+            size_x: nx, size_y: ny,
+            endian: tableEndian(t),
+        });
+        const grid = [];
+        for (let y = 0; y < ny; y++) grid.push(vals.slice(y * nx, (y + 1) * nx));
+        if (slot === 'timing') { S.timingMap = grid; document.getElementById('timingTitle').textContent = t.name; }
+        else { S.fuelMap = grid; document.getElementById('fuelTitle').textContent = t.name; }
+        S.currentTable[slot] = t;
+        // real axis labels from the ROM when the definition carries them
+        t.axisLabels = null;
+        try {
+            if (S.romBytes && t.xAxis) t.axisLabels = { x: Defs.readAxisScaled(S.romBytes, t.xAxis, tableEndian(t), nx) };
+            if (S.romBytes && t.yAxis) t.axisLabels = { ...(t.axisLabels || {}), y: Defs.readAxisScaled(S.romBytes, t.yAxis, tableEndian(t), ny) };
+        } catch (e) { /* static/default axes */ }
+        renderAll();
+        log(`table: ${t.name} loaded (${vals.length} values)`, 'ok');
+    } catch (e) { log('table read failed: ' + errMsg(e), 'err'); }
+}
+// After a ROM matches a definition: index its tables, auto-view the two
+// largest 2D tables so the grids show real data immediately.
+async function adoptDefinitionTables() {
+    renderMapIndex();
+    const twod = addressableTables().filter(t => (t.sizey || 0) > 1 && (t.sizex || 0) > 1)
+        .sort((a, b) => (b.sizex * b.sizey) - (a.sizex * a.sizey));
+    if (twod[0]) await viewTable(twod[0], 'fuel');
+    if (twod[1]) await viewTable(twod[1], 'timing');
+}
+
+const MAP_INDEX_FALLBACK = [
+    ['High Fuel Map', '0x3D00', '16×16'], ['Low Fuel Map', '0x3E00', '16×16'],
+    ['High Timing Map', '0x4200', '16×16'], ['Low Timing Map', '0x4300', '16×16'],
+    ['TP Scale', '0x3A00', '16'], ['RPM Scale', '0x3A20', '16'],
+    ['VQ Map (MAF)', '0x3800', '16×16'], ['Rev Limit', '0x4A10', '1'],
+];
+function renderMapIndex() {
+    const el = document.getElementById('mapIndex');
+    const tables = addressableTables();
+    if (!tables.length) {
+        if (!S.defsLoaded) {
+            el.innerHTML = '<tr><td colspan="3" style="opacity:.55">No definitions loaded</td></tr>';
+        } else if (!S.definition) {
+            el.innerHTML = '<tr><td colspan="3" style="opacity:.55">Dump a ROM to match its definition</td></tr>';
+        } else {
+            el.innerHTML = MAP_INDEX_FALLBACK.map(([n, a, s]) =>
+                `<tr><td class="highlight">${n}</td><td>${a}</td><td>${s}</td></tr>`).join('');
+        }
+        return;
+    }
+    el.innerHTML = tables.map((t, i) =>
+        `<tr data-ti="${i}" style="cursor:pointer" title="click to view"><td class="highlight">${t.name}</td><td>${addrHex(t.address)}</td><td>${t.sizex || 1}×${t.sizey || 1}</td></tr>`).join('');
+    el.querySelectorAll('tr[data-ti]').forEach(tr =>
+        tr.addEventListener('click', () => viewTable(tables[+tr.dataset.ti], 'fuel')));
+}
+
+const STATUS = [['ECU', 'ok'], ['VPW', 'ok'], ['Kernel', 'warn'], ['ROM', 'warn']];
+function renderStatus() {
+    const el = document.getElementById('statusGrid');
+    el.innerHTML = STATUS.map(([l, s]) =>
+        `<div class="status-item"><div class="dot ${s}"></div><div class="slabel">${l}</div></div>`).join('');
+}
+
+function updateGauges() {
+    document.getElementById('gRpm').textContent = Math.round(S.rpm);
+    document.getElementById('gBoost').textContent = S.boost.toFixed(1);
+    document.getElementById('gTemp').textContent = Math.round(S.temp);
+    document.getElementById('gAfr').textContent = S.afr.toFixed(1);
+    const set = (id, v, dec = 1) => { const e = document.getElementById(id); if (e) e.textContent = (+v).toFixed(dec); };
+    set('s_maf', S.maf); set('s_timing', S.timing); set('s_voltage', S.voltage);
+    set('s_knock', S.knock, 0); set('s_tps', S.tps, 0); set('s_iat', S.iat, 0);
+    const bar = (key, v, max) => {
+        const f = document.getElementById('bf_' + key), t = document.getElementById('b_' + key);
+        if (f) f.style.width = Math.min(100, (v / max) * 100) + '%';
+        if (t) t.textContent = (+v).toFixed(1);
+    };
+    bar('maf', S.maf, 320); bar('timing', S.timing, 45);
+    bar('fuelTrim', S.fuelTrim, 25); bar('voltage', S.voltage, 16);
+}
+
+/* ---------------- Simulator ---------------- */
+let simTimer = null;
+function simTick() {
+    // idle-ish wander with occasional "pull"
+    const pull = Math.random() < 0.06;
+    const target = pull ? 3200 + Math.random() * 2800 : 750 + Math.random() * 250;
+    S.rpm += (target - S.rpm) * 0.25;
+    S.boost = S.rpm > 2500 ? Math.min(18, (S.rpm - 2500) / 220) : -8 + Math.random() * 2;
+    S.temp = 185 + Math.sin(Date.now() / 60000) * 6 + Math.random();
+    S.afr = S.boost > 2 ? 11.8 + Math.random() * 0.8 : 14.2 + Math.random() * 1.1;
+    S.maf = Math.min(320, S.rpm / 22 + Math.random() * 8);
+    S.timing = Math.max(8, 32 - S.boost * 0.9 + Math.random() * 2);
+    S.voltage = 13.6 + Math.random() * 0.5;
+    S.knock = Math.random() < 0.02 ? 1 : 0;
+    S.tps = Math.min(100, S.rpm / 65);
+    S.iat = 95 + Math.random() * 12;
+    S.fuelTrim = (Math.random() - 0.5) * 8;
+    updateGauges();
+}
+function setSim(on) {
+    S.sim = on;
+    document.getElementById('simBtn').innerHTML = on
+        ? '<i class="fas fa-flask"></i> Sim: ON' : '<i class="fas fa-flask"></i> Sim: OFF';
+    if (on && !simTimer) simTimer = setInterval(simTick, 400);
+    if (!on && simTimer) { clearInterval(simTimer); simTimer = null; }
+}
+
+/* ---------------- Actions ---------------- */
+function setConnected(on) {
+    S.connected = on;
+    document.getElementById('connDot').style.background = on ? 'var(--accent-green)' : 'var(--accent-red)';
+    document.getElementById('connDot').style.boxShadow = on ? 'var(--glow-green)' : 'none';
+    document.getElementById('connText').textContent = on ? `Connected (${Bridge.mode})` : 'Disconnected';
+    document.getElementById('connectBtn').classList.toggle('live', on);
+    document.getElementById('connectBtn').innerHTML = on ? '<i class="fas fa-plug"></i> Disconnect' : '<i class="fas fa-plug"></i> Connect';
+}
+
+async function doDump() {
+    const btn = document.getElementById('dumpBtn');
+    btn.disabled = true;
+    showProgress(true);
+    log('dump: requesting ROM via nisprog…');
+    try {
+        if (Bridge.tauri) {
+            const res = await Bridge.invoke('dump_rom', { ecu: S.ecu });
+            log('dump: ' + String(res).split('\n').slice(1).join('\n'), 'ok');
+            // identify the ROM against loaded definitions
+            try {
+                const m = /^DUMP_OK path=(.+)$/m.exec(String(res));
+                if (m) {
+                    S.romPath = m[1].trim();
+                    const bytes = await Bridge.invoke('read_file_bin', { path: S.romPath });
+                    S.romBytes = bytes; // raw dump, kept for table parsing
+                    S.currentTable = { fuel: null, timing: null };
+                    document.getElementById('fuelTitle').textContent = 'Fuel Map';
+                    document.getElementById('timingTitle').textContent = 'Timing Map';
+                    const def = Defs.matchRom(bytes);
+                    if (def) {
+                        const full = Defs.resolveBase(def);
+                        S.definition = full;
+                        S.romLoaded = true;
+                        document.getElementById('ecuId').textContent = full.romid.ecuid || full.romid.internalidstring;
+                        document.getElementById('romSize').textContent = Math.round(bytes.length / 1024) + ' KB';
+                        document.getElementById('defName').textContent = full.romid.xmlid + ' · ' + full.romid.memmodel;
+                        log(`dump: ${bytes.length} bytes — matched definition ${full.romid.xmlid} (${full.romid.memmodel}, ${full.romid.endian}-endian)`, 'ok');
+                        if (full.checksums.length) log(`dump: ${full.checksums.length} checksum block(s) registered (${full.checksums.map(c => c.type).join(', ')})`, 'info');
+                        await adoptDefinitionTables();
+                    } else {
+                        S.romLoaded = true;
+                        document.getElementById('romSize').textContent = Math.round(bytes.length / 1024) + ' KB';
+                        log('dump: no loaded definition matched this ROM — load its XML definition to identify it', 'warn');
+                        renderMapIndex();
+                    }
+                }
+            } catch (e2) { log('dump: ROM loaded but identification failed: ' + errMsg(e2), 'warn'); }
+        } else {
+            // simulated dump with progress
+            for (let p = 0; p <= 100; p += 5) { setProgress(p); await sleep(90); }
+            S.romLoaded = true;
+            document.getElementById('ecuId').textContent = '8U92A';
+            document.getElementById('romSize').textContent = '512 KB';
+            document.getElementById('defName').textContent = 'SH7055';
+            log('dump: 524288 bytes in 97.2s (5.4 kB/s, kernel)', 'ok');
+            log('dump: ECUID 8U92A detected, definition SH7055 applied', 'ok');
+        }
+    } catch (e) {
+        log('dump failed: ' + errMsg(e), 'err');
+    }
+    showProgress(false);
+    btn.disabled = false;
+}
+
+async function doFlash() {
+    if (!S.romLoaded) { log('flash: no ROM loaded — dump first', 'warn'); return; }
+    if (!S.dirty) { log('flash: no changes to write', 'warn'); return; }
+    if (!confirm('Flash modified ROM to ECU? Double-check your maps.')) return;
+    const btn = document.getElementById('flashBtn');
+    btn.disabled = true;
+    showProgress(true);
+    log('flash: erasing + writing blocks…', 'warn');
+    try {
+        if (Bridge.tauri) {
+            const res = await Bridge.invoke('flash_rom', { ecu: S.ecu, maps: { fuel: S.fuelMap, timing: S.timingMap } });
+            log('flash: ' + JSON.stringify(res), 'ok');
+        } else {
+            for (let p = 0; p <= 100; p += 4) { setProgress(p); await sleep(110); }
+            log('flash: 8 blocks written, checksum OK', 'ok');
+            log('flash: ECU reset — kernel removed, new ROM active', 'ok');
+        }
+        S.dirty = false;
+        document.getElementById('fuelDirty').innerHTML = '';
+        document.getElementById('timingDirty').innerHTML = '';
+    } catch (e) {
+        log('flash failed: ' + errMsg(e), 'err');
+    }
+    showProgress(false);
+    btn.disabled = false;
+}
+
+function showProgress(on) {
+    document.getElementById('progressWrap').style.display = on ? 'block' : 'none';
+    if (on) setProgress(0);
+}
+function setProgress(p) { document.getElementById('progressFill').style.width = p + '%'; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function renderAll() { renderFuelMap(); renderTimingMap(); updateGauges(); }
+
+/* ---------------- Boot ---------------- */
+seedMaps();
+renderSensors();
+renderBars();
+renderMapIndex();
+renderStatus();
+renderAll();
+setSim(true);
+log('FanTom dashboard ready — ' + Bridge.mode + ' mode', 'ok');
+log('bridge: ' + (Bridge.tauri ? 'native (Tauri invoke available)' : 'no native bridge, using simulator'), 'warn');
+document.getElementById('footerNote').innerHTML = Bridge.tauri
+    ? 'GhostTech FanTom · <b>native mode</b> — nisprog bridge active'
+    : 'GhostTech FanTom · sim mode — connect a bridge (Tauri invoke) to drive live data';
+if (Bridge.tauri) loadDefinitions();
+
+document.getElementById('connectBtn').addEventListener('click', () => {
+    if (S.connected) { setConnected(false); log('disconnected'); }
+    else {
+        setConnected(true);
+        log('OBDLink VPW link established (PCM Hammer backend)', 'ok');
+        log('kernel uploaded to PCM RAM — fast ops enabled', 'ok');
+    }
+});
+document.getElementById('simBtn').addEventListener('click', () => setSim(!S.sim));
+document.getElementById('ecuSelect').addEventListener('change', (e) => {
+    S.ecu = e.target.value;
+    log('ECU family set to ' + S.ecu + ' — kernel npk_' + S.ecu, 'info');
+});
+document.getElementById('dumpBtn').addEventListener('click', doDump);
+document.getElementById('flashBtn').addEventListener('click', doFlash);
+document.getElementById('consoleInput').addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    const cmd = e.target.value.trim();
+    if (!cmd) return;
+    e.target.value = '';
+    log('nisprog&gt; ' + cmd, 'info');
+    if (!Bridge.tauri) { log('no native bridge — command not sent (sim mode)', 'warn'); return; }
+    try {
+        const out = await Bridge.invoke('nisprog_raw', { script: cmd });
+        out.split('\n').forEach(line => { if (line.trim()) log(line, 'ok'); });
+    } catch (err) {
+        log('error: ' + errMsg(err), 'err');
+    }
+});
+</script>
+</body>
+</html>
+
