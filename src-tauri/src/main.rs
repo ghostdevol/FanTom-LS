@@ -38,6 +38,16 @@ fn pcmh_path() -> PathBuf {
                     return sidecar;
                 }
             }
+            // Release zips name it pcmhammer-cli.exe (spelling varies) —
+            // accept any *hammer*cli*.exe next to the app.
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    let n = entry.file_name().to_string_lossy().to_lowercase();
+                    if n.ends_with(".exe") && n.contains("hammer") && n.contains("cli") {
+                        return entry.path();
+                    }
+                }
+            }
         }
     }
     if cfg!(windows) {
