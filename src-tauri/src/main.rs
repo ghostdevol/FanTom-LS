@@ -292,6 +292,31 @@ struct DefFile {
     xml: String,
 }
 
+/// Read a definition file as text, tolerating non-UTF-8 encodings.
+/// XDFs in the wild are sometimes Windows-1252 or UTF-16; sniff the BOM
+/// for UTF-16 and fall back to lossy UTF-8 so one odd file can't break
+/// the whole library load.
+fn read_def_text(path: &std::path::Path) -> Result<String, String> {
+    let bytes =
+        std::fs::read(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+    let text = if bytes.starts_with(&[0xFF, 0xFE]) {
+        let u16s: Vec<u16> = bytes[2..]
+            .chunks_exact(2)
+            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .collect();
+        String::from_utf16_lossy(&u16s)
+    } else if bytes.starts_with(&[0xFE, 0xFF]) {
+        let u16s: Vec<u16> = bytes[2..]
+            .chunks_exact(2)
+            .map(|c| u16::from_be_bytes([c[0], c[1]]))
+            .collect();
+        String::from_utf16_lossy(&u16s)
+    } else {
+        String::from_utf8_lossy(&bytes).into_owned()
+    };
+    Ok(text)
+}
+
 /// Read every *.xdf / *.xml under `dir` (recursive). `dir` falls back to
 /// XDFDEFINITIONS_PATH — same env-var pattern as PCMHAMMER_PATH.
 #[tauri::command]
@@ -326,8 +351,13 @@ fn load_definitions(dir: Option<String>) -> Result<Vec<DefFile>, String> {
             if !is_def {
                 continue;
             }
-            let xml = std::fs::read_to_string(&path)
-                .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+            let xml = match read_def_text(&path) {
+                Ok(t) => t,
+                Err(e) => {
+                    eprintln!("load_definitions: skipping {}: {e}", path.display());
+                    continue;
+                }
+            };
             out.push(DefFile {
                 name: path
                     .file_name()
